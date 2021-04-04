@@ -1,14 +1,70 @@
-use std::io::{self, BufRead};
+use std::io::{self, BufRead, Write};
 use std::convert::TryInto;
 
 fn main() {
     let mut line = String::new();
+    print!("HEX: ");
+    io::stdout().flush().unwrap();
     let stdin = io::stdin();
     stdin.lock().read_line(&mut line).unwrap();
     line.pop();
+    println!("B64: {:?}", hex_to_b64(&line));
+}
 
-    let tmp = get_hex_indices(&mut line);
-    println!("MAPPED: {:?}", map_hex_indices(tmp));
+fn hex_to_b64(input: &String) -> String {
+
+    map_hex_indices(get_hex_indices(input))
+    
+}
+
+fn get_hex_indices(input: &String) -> Vec<u8> {
+
+    let mut hex_bytes = string_to_hex(&input);
+    //println!("HEX: {:?}", hex_bytes);
+    //
+    // Length of hex array in bits
+    let length: i32 = (hex_bytes.len() * 8).try_into().unwrap();
+
+    // How many 24 bit chunks are needed
+    let round: i32 = (f64::from(length) / f64::from(24)).ceil() as i32;
+
+    // Padding to add on
+    let pad = ((round * 24) - length) / 8;
+
+    let mask: u8 = 0b0011_1111;
+    let mut buff: u32 = 0;
+
+    let mut i = 0;
+    while i != pad {
+        //println!("PADDING ADDED");
+        hex_bytes.push(0);
+        i+=1;
+    }
+
+    let mut iter = hex_bytes.iter();
+    let size = pad + (round * 3);
+    let mut tmp_bytes: [u8; 4] = [0; 4];
+    let mut b64_bytes: Vec<u8> = Vec::with_capacity(size.try_into().unwrap());
+
+    i = 0;
+    while i < (hex_bytes.len() / 3).try_into().unwrap() {
+
+        for _ in 0..3 {
+            buff <<= 8;
+            buff = buff | (*iter.next().unwrap() as u32);
+        }
+
+        for j in (0..4).rev() {
+            tmp_bytes[j] = (buff & (mask as u32)).try_into().unwrap();
+            buff >>= 6;
+        }
+        b64_bytes.extend_from_slice(&tmp_bytes);
+        
+        buff = 0;
+        i+=1;
+    }
+
+    b64_bytes
 }
 
 fn string_to_hex(input: &String) -> Vec<u8> {
@@ -19,7 +75,10 @@ fn string_to_hex(input: &String) -> Vec<u8> {
 
     let len = input.len();
     
-    for (i, c) in input.to_uppercase().chars().into_iter().enumerate() {
+    for (i, c) in input.to_uppercase()
+                        .chars()
+                        .into_iter()
+                        .enumerate() {
         reg = match c {
            '1'=> 0b0000_0001,
            '2' => 0b0000_0010,
@@ -53,63 +112,6 @@ fn string_to_hex(input: &String) -> Vec<u8> {
     }
 
     tmp
-}
-
-fn get_hex_indices(input: &mut String) -> Vec<u8> {
-
-    let mut hex_bytes = string_to_hex(&input);
-    //println!("HEX: {:?}", hex_bytes);
-    // Length of hex array in bits
-    let length: i32 = (hex_bytes.len() * 8).try_into().unwrap();
-    let round: i32 = (f64::from(length) / f64::from(24)).ceil() as i32;
-    let pad = ((round * 24) - length) / 8;
-
-    let mut b64_bytes: Vec<u8> = Vec::new();
-    let mask: u8 = 0b0011_1111;
-    let mut buff: u32 = 0;
-
-    //println!("BITS: {}", length);
-
-    println!("PAD: {}", pad);
-    let mut i = 0;
-    while i != pad {
-        //println!("PADDING ADDED");
-        hex_bytes.push(0);
-        i+=1;
-    }
-
-
-    i = 0;
-    let mut j = 0;
-    let mut seq = hex_bytes.iter();
-
-    let mut tmp: u32;
-
-    while i < (hex_bytes.len() / 3).try_into().unwrap() {
-
-        while j < 3 {
-            buff <<= 8;
-            tmp = *seq.next().unwrap() as u32;
-            buff = buff | tmp;        
-            j+=1;
-        }
-        j = 0;
-
-        while j < 4 {
-            b64_bytes.push((buff & (mask as u32)).try_into().unwrap());
-            //println!("MASKED: {:#034b}", (buff & (mask as u32)));
-            buff >>= 6;
-            //println!("BUFF: {:#034b}", buff);
-            j+=1; 
-        }
-        
-        buff = 0;
-        j = 0;
-        i+=1;
-    }
-
-    //b64_bytes.reverse();
-    b64_bytes
 }
 
 fn map_hex_indices(arr: Vec<u8>) -> String {
