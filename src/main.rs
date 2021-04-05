@@ -8,33 +8,29 @@ fn main() {
     let stdin = io::stdin();
     stdin.lock().read_line(&mut line).unwrap();
     line.pop();
-    println!("B64: {:?}", hex_to_b64(&line));
+    println!("B64: {:?}", hex_to_b64(line));
 }
 
-fn hex_to_b64(input: &String) -> String {
+fn hex_to_b64(input: String) -> String {
 
     map_hex_indices(get_hex_indices(input))
     
 }
 
-fn get_hex_indices(input: &String) -> Vec<u8> {
+fn get_hex_indices(input: String) -> Vec<u8> {
 
-    let mut hex_bytes = string_to_hex(&input);
-    //println!("HEX: {:?}", hex_bytes);
-    //
-    // Length of hex array in bits
+    let mut hex_bytes = string_to_hex(input);
+    // Length of hex u8 array in bits
     let length: i32 = (hex_bytes.len() * 8).try_into().unwrap();
-
     // How many 24 bit chunks are needed
-    let round: i32 = (f64::from(length) / f64::from(24)).ceil() as i32;
-
+    let chunks: i32 = (f64::from(length) / f64::from(24)).ceil() as i32;
     // Padding to add on
-    let pad = ((round * 24) - length) / 8;
+    let pad = ((chunks * 24) - length) / 8;
 
     let mask: u8 = 0b0011_1111;
     let mut buff: u32 = 0;
-
     let mut i = 0;
+
     while i != pad {
         //println!("PADDING ADDED");
         hex_bytes.push(0);
@@ -67,7 +63,7 @@ fn get_hex_indices(input: &String) -> Vec<u8> {
     b64_bytes
 }
 
-fn string_to_hex(input: &String) -> Vec<u8> {
+fn string_to_hex(input: String) -> Vec<u8> {
 
     let mut tmp: Vec<u8> = Vec::new();
     let mut buff: u8 = 0;
@@ -187,6 +183,5 @@ fn map_hex_indices(arr: Vec<u8>) -> String {
             _ => '='
         });
     }
-
     buff 
 }
