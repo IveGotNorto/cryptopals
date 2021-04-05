@@ -38,7 +38,7 @@ fn get_hex_indices(input: String) -> Vec<u8> {
     }
 
     let mut iter = hex_bytes.iter();
-    let size = pad + (round * 3);
+    let size = pad + (chunks * 3);
     let mut tmp_bytes: [u8; 4] = [0; 4];
     let mut b64_bytes: Vec<u8> = Vec::with_capacity(size.try_into().unwrap());
 
