@@ -13,11 +13,12 @@ fn main() {
 
 fn hex_to_b64(input: String) -> String {
 
-    map_hex_indices(get_hex_indices(input))
+    let (arr, pad) = get_hex_indices(input);
+    map_hex_indices(arr, pad)
     
 }
 
-fn get_hex_indices(input: String) -> Vec<u8> {
+fn get_hex_indices(input: String) -> (Vec<u8>, usize) {
 
     let mut hex_bytes = string_to_hex(input);
     // Length of hex u8 array in bits
@@ -29,22 +30,17 @@ fn get_hex_indices(input: String) -> Vec<u8> {
 
     let mask: u8 = 0b0011_1111;
     let mut buff: u32 = 0;
-    let mut i = 0;
 
-    while i != pad {
-        //println!("PADDING ADDED");
-        hex_bytes.push(0);
-        i+=1;
-    }
+    for _ in 0..pad { hex_bytes.push(0); }
 
     let mut iter = hex_bytes.iter();
     let size = pad + (chunks * 3);
     let mut tmp_bytes: [u8; 4] = [0; 4];
     let mut b64_bytes: Vec<u8> = Vec::with_capacity(size.try_into().unwrap());
 
-    i = 0;
-    while i < (hex_bytes.len() / 3).try_into().unwrap() {
+    let mut i = 0;
 
+    while i < (hex_bytes.len() / 3).try_into().unwrap() {
         for _ in 0..3 {
             buff <<= 8;
             buff = buff | (*iter.next().unwrap() as u32);
@@ -59,18 +55,17 @@ fn get_hex_indices(input: String) -> Vec<u8> {
         buff = 0;
         i+=1;
     }
-
-    b64_bytes
+    (b64_bytes, pad.try_into().unwrap())
 }
 
 fn string_to_hex(input: String) -> Vec<u8> {
+
+    assert!(input.len() % 2 == 0, "input length must be even");
 
     let mut tmp: Vec<u8> = Vec::new();
     let mut buff: u8 = 0;
     let mut reg: u8;
 
-    let len = input.len();
-    
     for (i, c) in input.to_uppercase()
                         .chars()
                         .into_iter()
@@ -101,20 +96,16 @@ fn string_to_hex(input: String) -> Vec<u8> {
             buff = 0;
         }
     }
-
-    if len % 2 != 0 {
-        buff <<= 4;
-        tmp.push(buff);
-    }
-
     tmp
 }
 
-fn map_hex_indices(arr: Vec<u8>) -> String {
+fn map_hex_indices(arr: Vec<u8>, pad: usize) -> String {
 
     let mut buff = String::new();
 
-    for i in arr.iter() {
+    for i in arr.iter()
+                .take(arr.len() - pad) {
+
         buff.push(match i {
             0 => 'A',
             1 => 'B',
@@ -183,5 +174,10 @@ fn map_hex_indices(arr: Vec<u8>) -> String {
             _ => '='
         });
     }
+
+    for _ in 0..pad {
+       buff.push('=');
+    }
+
     buff 
 }
