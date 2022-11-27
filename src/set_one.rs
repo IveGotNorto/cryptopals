@@ -1,3 +1,4 @@
+#[allow(dead_code)]
 pub mod challenge_one {
 
     use std::convert::TryInto;
@@ -218,6 +219,7 @@ pub mod challenge_one {
     }
 }
 
+#[allow(dead_code)]
 pub mod challenge_two {
 
     pub fn xor_same_length(a: String, b: String) -> String {
@@ -314,15 +316,15 @@ pub mod challenge_two {
     }
 }
 
+#[allow(dead_code)]
 pub mod challenge_three {
 
     use std::collections::HashMap;
     use std::cmp::Ordering;
 
-    fn decrypt_hex_string(input: String) -> String {
+    pub fn decrypt_hex_string(input: String) -> String {
         let hex = super::challenge_one::string_to_hex(input);
 
-        let mut scores = Vec::new();
         let mut possibles = Vec::new();
         let mut buff = Vec::new();
 
@@ -334,14 +336,20 @@ pub mod challenge_three {
             possibles.push(u8_to_ascii(buff.to_owned()).to_uppercase());
         }
 
-        for p in possibles.clone() {
+        get_best_score(possibles)
+    }
+
+    pub fn get_best_score(texts: Vec<String>) -> String {
+
+        let mut scores = Vec::new();
+
+        for p in texts.clone() {
 
             let length = p.len();
             let mut score = 0.0;
             let mut totals = HashMap::new();
             let mut percs = HashMap::new();
 
-            // Count all chars
             for c in p.chars() {
                 match totals.get(&c) {
                     Some(value) => totals.insert(c, value + 1),
@@ -357,17 +365,20 @@ pub mod challenge_three {
                 score += (char_to_freq(key) - value).abs();
             }
 
-            scores.push(score);
+            //println!("duh score: {}", score);
 
+            scores.push(score);
         }
 
         let lowest_index = scores
-                                .iter()
-                                .enumerate()
-                                .min_by(|(_, a), (_, b)| a.partial_cmp(b).unwrap_or(Ordering::Equal))
-                                .map(|(index, _)| index);
+                            .iter()
+                            .enumerate()
+                            .min_by(|(_, a), (_, b)| a.partial_cmp(b).unwrap_or(Ordering::Equal))
+                            .map(|(index, _)| index);
 
-        possibles[lowest_index.unwrap()].to_string()
+        //println!("index: {}", lowest_index.unwrap());
+
+        texts[lowest_index.unwrap()].to_string()
     }
 
     fn u8_to_ascii(chars: Vec<u8>) -> String {
@@ -406,12 +417,9 @@ pub mod challenge_three {
             'X' => 0.19,
             'Y' => 1.72,
             'Z' => 0.11,
-            ';' => 0.10,
-            '.' => 0.10,
-            '\'' => 0.10,
-            '\"' => 0.10,
-            ',' => 0.10,
-            _ => f32::MAX
+            '\'' => 0.11,
+            ' ' => 10.00,
+            _ => -100.00 
         }
     }
 
@@ -429,4 +437,31 @@ pub mod challenge_three {
             assert_eq!(decrypt_hex_string(item.0.to_string()), item.1);
         }
     }
+}
+
+#[allow(dead_code)]
+pub mod challenge_four {
+
+    use std::fs::File;
+    use std::io::{BufRead, BufReader};
+
+    fn decrypt_hex_strings() -> String {
+        let file = File::open("src/data/section_1_challenge_4.txt").unwrap();
+        let reader = BufReader::new(file);
+
+        let mut possibles = Vec::new();
+
+        for line in reader.lines() {
+            let line = line.unwrap(); 
+            possibles.push(super::challenge_three::decrypt_hex_string(line));
+        }
+
+        super::challenge_three::get_best_score(possibles)
+    }
+
+    #[test]
+    fn detect_single_character_xor() {
+        assert_eq!(decrypt_hex_strings(), "NOW THAT THE PARTY IS JUMPING\n");
+    }
+
 }
