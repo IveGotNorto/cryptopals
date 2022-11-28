@@ -11,7 +11,7 @@ pub mod challenge_one {
     // might want to change a bunch of these to usize instead
     fn get_hex_indices(input: String) -> (Vec<u8>, usize) {
 
-        let mut hex_bytes = string_to_hex(input);
+        let mut hex_bytes = hex_string_to_bytes(input);
         let mut length = hex_bytes.len();
         // Length of hex u8 array in bits
         let b_length: u32 = (hex_bytes.len() * 8).try_into().unwrap();
@@ -52,14 +52,19 @@ pub mod challenge_one {
         (b64_bytes, pad.try_into().unwrap())
     }
 
-    pub fn string_to_hex(input: String) -> Vec<u8> {
+    pub fn hex_string_to_bytes(mut input: String) -> Vec<u8> {
 
-        assert!(input.len() % 2 == 0, "input length must be even");
+        let mut pad_add = false;
 
         let mut tmp: Vec<u8> = Vec::new();
         let mut buff: u8 = 0;
         let mut reg: u8;
 
+        if input.len() % 2 != 0 {
+            input.push('_');
+            pad_add = true;
+        }
+        
         for (i, c) in input.to_uppercase()
                             .chars()
                             .into_iter()
@@ -91,6 +96,11 @@ pub mod challenge_one {
                 buff = 0;
             }
         }
+
+        if pad_add {
+            tmp.pop();
+        }
+
         tmp
     }
 
@@ -224,8 +234,8 @@ pub mod challenge_two {
 
     pub fn xor_same_length(a: String, b: String) -> String {
         assert!(a.len() == b.len(), "input values must be same length");
-        let arr_a = super::challenge_one::string_to_hex(a);
-        let arr_b = super::challenge_one::string_to_hex(b);
+        let arr_a = super::challenge_one::hex_string_to_bytes(a);
+        let arr_b = super::challenge_one::hex_string_to_bytes(b);
 
         let mut buff = Vec::new();
 
@@ -323,7 +333,7 @@ pub mod challenge_three {
     use std::cmp::Ordering;
 
     pub fn decrypt_hex_string(input: String) -> String {
-        let hex = super::challenge_one::string_to_hex(input);
+        let hex = super::challenge_one::hex_string_to_bytes(input);
 
         let mut possibles = Vec::new();
         let mut buff = Vec::new();
@@ -381,7 +391,7 @@ pub mod challenge_three {
         texts[lowest_index.unwrap()].to_string()
     }
 
-    fn u8_to_ascii(chars: Vec<u8>) -> String {
+    pub fn u8_to_ascii(chars: Vec<u8>) -> String {
         let mut buff = String::new();
         for c in chars {
             buff.push(c as char)
@@ -462,6 +472,42 @@ pub mod challenge_four {
     #[test]
     fn detect_single_character_xor() {
         assert_eq!(decrypt_hex_strings(), "NOW THAT THE PARTY IS JUMPING\n");
+    }
+
+}
+
+#[allow(dead_code)]
+pub mod challenge_five {
+
+    fn encrypt_ascii(key: String, text: String) -> String {
+        let mut buff = Vec::new();
+
+        let text_hex = text.as_bytes();
+        let key_hex = key.as_bytes();
+
+        let rot = key_hex.len();
+
+        for (i, byte) in text_hex.iter().enumerate() {
+            buff.push(key_hex[i % rot] ^ byte);
+        }
+        
+        super::challenge_two::u8_to_hex(buff)
+    }
+
+    #[test]
+    fn implement_repeating_key_xor() {
+        let array = [
+            // Key, Input, Output
+            (
+                "ICE",
+                "Burning 'em, if you ain't quick and nimble\nI go crazy when I hear a cymbal",
+                "0b3637272a2b2e63622c2e69692a23693a2a3c6324202d623d63343c2a26226324272765272a282b2f20430a652e2c652a3124333a653e2b2027630c692b20283165286326302e27282f"
+            )
+        ];
+
+        for item in array.iter() {
+            assert_eq!(encrypt_ascii(item.0.to_string(), item.1.to_string()), item.2.to_string());
+        }
     }
 
 }
