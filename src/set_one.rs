@@ -5,7 +5,7 @@ pub mod challenge_one {
 
     pub fn hex_to_b64(input: String) -> String {
         let (arr, pad) = get_hex_indices(input);
-        map_hex_to_b64(arr, pad)
+        map_u8s_to_b64(arr, pad)
     }
 
     // might want to change a bunch of these to usize instead
@@ -106,7 +106,7 @@ pub mod challenge_one {
 
     
 
-    pub fn map_hex_to_b64(arr: Vec<u8>, pad: usize) -> String {
+    pub fn map_u8s_to_b64(arr: Vec<u8>, pad: usize) -> String {
 
         let mut buff = String::new();
 
